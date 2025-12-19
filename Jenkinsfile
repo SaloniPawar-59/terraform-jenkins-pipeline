@@ -1,46 +1,48 @@
 pipeline {
-  agent any
+    agent any
 
-  environment {
-    AWS_DEFAULT_REGION = "ap-south-1"
-  }
-
-  stages {
-
-    stage('Checkout Code') {
-      steps {
-        checkout scm
-      }
+    environment {
+        AWS_REGION = "ap-south-1"
     }
 
-    stage('Terraform Init') {
-      steps {
-        sh 'terraform init'
-      }
+    stages {
+
+        stage('Checkout Code') {
+            steps {
+                git branch: 'main',
+                    url: 'https://github.com/<your-username>/terraform-jenkins-pipeline.git'
+            }
+        }
+
+        stage('Terraform Init') {
+            steps {
+                sh 'terraform init'
+            }
+        }
+
+        stage('Terraform Plan') {
+            steps {
+                sh 'terraform plan'
+            }
+        }
+
+        stage('Approval') {
+            steps {
+                input message: 'Approve Terraform Apply?', ok: 'Apply'
+            }
+        }
+
+        stage('Terraform Apply') {
+            steps {
+                sh 'terraform apply -auto-approve'
+            }
+        }
+
     }
 
-    stage('Terraform Validate') {
-      steps {
-        sh 'terraform validate'
-      }
+    post {
+        success {
+            echo 'Infrastructure provisioned successfully'
+        }
     }
-
-    stage('Terraform Plan') {
-      steps {
-        sh 'terraform plan -out=tfplan'
-      }
-    }
-
-    stage('Manual Approval') {
-      steps {
-        input message: 'Do you want to apply Terraform changes?'
-      }
-    }
-
-    stage('Terraform Apply') {
-      steps {
-        sh 'terraform apply tfplan'
-      }
-    }
-  }
 }
